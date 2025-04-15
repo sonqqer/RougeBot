@@ -1,0 +1,146 @@
+import discord
+import random
+import string
+import os
+from keep_alive import keep_alive
+
+keep_alive()
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+client = discord.Client(intents=intents)
+
+@client.event
+async def on_ready():
+    print(f'Rouge Bot is online as {client.user}')
+
+@client.event
+async def on_member_join(member):
+    for channel in member.guild.text_channels:
+        if channel.permissions_for(member.guild.me).send_messages:
+            await channel.send(f"👋 Welcome to the server, {member.mention}! Rouge Bot is watching...")
+            break
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    author = message.author
+    content = message.content
+
+    # !lemm command
+    if content.startswith('!lemm'):
+        await message.channel.send("lemm stinks")
+
+    # !hack command
+    elif content.startswith('!hack'):
+        if len(message.mentions) == 0:
+            await message.channel.send("Mention someone to hack!")
+            return
+
+        victim = message.mentions[0]
+        fake_ip = ".".join(str(random.randint(0, 255)) for _ in range(4))
+        fake_email = ''.join(random.choices(string.ascii_lowercase, k=7)) + "@gmail.com"
+        fake_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        fake_network = random.choice(["NSA Servers", "FBI Database", "Dark Web Node", "Russian Proxy", "NASA Mainframe"])
+
+        await message.channel.send(f"Hacking {victim.mention}...\n")
+        await message.channel.send(f"IP: {fake_ip}\nEmail: {fake_email}\nPassword: {fake_password}\nAccessing {fake_network}... ✅")
+
+    # !track command
+    elif content.startswith('!track'):
+        if len(message.mentions) == 0:
+            await message.channel.send("Mention someone to track!")
+            return
+
+        target = message.mentions[0]
+        fake_ip = ".".join(str(random.randint(0, 255)) for _ in range(4))
+        lat = round(random.uniform(-90, 90), 6)
+        lon = round(random.uniform(-180, 180), 6)
+        alt = round(random.uniform(0, 5000), 2)
+
+        countries = ["USA", "Russia", "Brazil", "Japan", "Germany", "Canada", "France", "China"]
+        streets = ["Oakwood Blvd", "Maple Street", "5th Avenue", "Sunset Road", "Birch Lane"]
+        isps = ["Starlink", "Comcast", "AT&T", "Vodafone", "Orange", "Deutsche Telekom"]
+
+        location = random.choice(countries)
+        street = random.choice(streets)
+        isp = random.choice(isps)
+        gmaps_link = f"https://www.google.com/maps/@{lat},{lon},15z"
+
+        await message.channel.send(f"🔍 Tracking {target.mention}...\n")
+        await message.channel.send(
+            f"IP Address: `{fake_ip}`\n"
+            f"Coordinates: `{lat}, {lon}`\n"
+            f"Altitude: `{alt}m`\n"
+            f"Location: `{street}, {location}`\n"
+            f"ISP: `{isp}`\n"
+            f"📍 Live location: {gmaps_link}\n"
+            f"Status: Target locked ✅"
+        )
+
+    # $warn command
+    elif content.startswith('$warn'):
+        co_owner_role = next((role for role in author.roles if role.name.lower() == "co-owner"), None)
+        if not co_owner_role:
+            await message.channel.send("You need the 'co-owner' role to use this command.")
+            return
+
+        if len(message.mentions) == 0:
+            await message.channel.send("Please mention a user to warn.")
+            return
+
+        user = message.mentions[0]
+        await message.channel.send(f"{user.mention} has been warned by {author.mention} ⚠️")
+
+    # $kick command
+    elif content.startswith('$kick'):
+        co_owner_role = next((role for role in author.roles if role.name.lower() == "co-owner"), None)
+        if not co_owner_role:
+            await message.channel.send("You need the 'co-owner' role to use this command.")
+            return
+
+        if len(message.mentions) == 0:
+            await message.channel.send("Please mention a user to kick.")
+            return
+
+        user = message.mentions[0]
+        try:
+            await message.guild.kick(user)
+            await message.channel.send(f"{user.mention} has been kicked by {author.mention} 👢")
+        except discord.Forbidden:
+            await message.channel.send("I don't have permission to kick that user.")
+
+    # $mute command
+    elif content.startswith('$mute'):
+        co_owner_role = next((role for role in author.roles if role.name.lower() == "co-owner"), None)
+        if not co_owner_role:
+            await message.channel.send("You need the 'co-owner' role to use this command.")
+            return
+
+        if len(message.mentions) == 0:
+            await message.channel.send("Please mention a user to mute.")
+            return
+
+        user = message.mentions[0]
+        muted_role = discord.utils.get(message.guild.roles, name="Muted")
+        if not muted_role:
+            await message.channel.send("Muted role not found.")
+            return
+
+        try:
+            await user.add_roles(muted_role)
+            await message.channel.send(f"{user.mention} has been muted by {author.mention} 🔇")
+        except discord.Forbidden:
+            await message.channel.send("I don't have permission to mute that user.")
+
+    # dead chat gif response
+    elif content.lower() == "dead chat":
+        await message.channel.send("💀 This chat really is dead...")
+        await message.channel.send("https://media.tenor.com/ynGvlw_h0sEAAAAC/dead-chat.gif")
+
+client.run(os.getenv("TOKEN"))
+
+                              
